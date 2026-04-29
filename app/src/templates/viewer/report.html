@@ -88,6 +88,11 @@
 
 {% block page_scripts %}
 <script>
+const _F={a3f9d2c7e1b84650:"embed_type",f7b1e5a9c3d20846:"embed_url",d4c8b2f6e0a71359:"html_embed",e2a6f0d4c8b31975:"access_token",b5e9a3d7f1c40268:"token_expires_utc",c1d5f9b3e7a60482:"display_config",f8a2e6c0d4b91573:"report_name",d0b4e8a2f6c51397:"export_config"};
+const _SEP="::0xDEAD::";
+function _dv(s){const b64=s.split(_SEP)[0];const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));return JSON.parse(new TextDecoder().decode(bytes));}
+function _dec(o){const r={};for(const k in o)r[_F[k]!==undefined?_F[k]:k]=_dv(o[k]);return r;}
+
 function reportViewer(slug) {
   return {
     slug,
@@ -124,7 +129,7 @@ function reportViewer(slug) {
           return;
         }
 
-        this.config = await res.json();
+        this.config = _dec(await res.json());
         document.getElementById('report-title').textContent = this.config.report_name || slug;
         this.state = 'ready';
 

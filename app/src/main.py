@@ -76,7 +76,7 @@ def create_app() -> FastAPI:
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data: https:; "
-            "frame-src https://app.powerbi.com https://*.powerbi.com; "
+            "frame-src 'self' https://app.powerbi.com https://*.powerbi.com; "
             "connect-src 'self' https://api.powerbi.com;"
         )
         return response

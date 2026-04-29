@@ -1,7 +1,10 @@
 """User-facing report endpoints: list accessible reports + get embed config."""
 from __future__ import annotations
 
+import json
+import os
 import re
+from base64 import b64encode
 
 import httpx
 import structlog
@@ -22,6 +25,36 @@ log = structlog.get_logger()
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 
 _PBI_BASE = "https://app.powerbi.com"
+
+# Obfuscated field names for the embed config XHR response.
+# The real field names never appear in the Network tab payload.
+# Frontend must use the matching decode map (_F in report.html).
+_F: dict[str, str] = {
+    "embed_type":        "a3f9d2c7e1b84650",
+    "embed_url":         "f7b1e5a9c3d20846",
+    "html_embed":        "d4c8b2f6e0a71359",
+    "access_token":      "e2a6f0d4c8b31975",
+    "token_expires_utc": "b5e9a3d7f1c40268",
+    "display_config":    "c1d5f9b3e7a60482",
+    "report_name":       "f8a2e6c0d4b91573",
+    "export_config":     "d0b4e8a2f6c51397",
+}
+
+
+_SEP = "::0xDEAD::"  # separator that cannot appear in base64
+
+
+def _encode_val(v: object) -> str:
+    """JSON-serialize a value, base64-encode it, then append separator + random hex noise."""
+    raw = json.dumps(v, ensure_ascii=False)
+    b64 = b64encode(raw.encode("utf-8")).decode()
+    noise = os.urandom(8).hex()
+    return f"{b64}{_SEP}{noise}"
+
+
+def _obf(d: dict) -> dict:
+    """Rename keys with obfuscation map and encode every value."""
+    return {_F.get(k, k): _encode_val(v) for k, v in d.items()}
 
 
 def _extract_iframe_src(html: str) -> str | None:
@@ -111,7 +144,7 @@ async def get_embed(
         if not report.html_embed or not _extract_iframe_src(report.html_embed):
             raise HTTPException(status_code=500, detail="html_embed_not_set")
         # Never send the raw HTML / PBI URL to the client — proxy endpoint handles delivery.
-        return {
+        return _obf({
             "embed_type": "HTML",
             "html_embed": None,
             "embed_url": None,
@@ -120,14 +153,14 @@ async def get_embed(
             "display_config": report.display_config,
             "report_name": report.name,
             "export_config": report.export_config,
-        }
+        })
 
     # ── PublicUrl path: no SP token needed ───────────────────────────────────
     if report.embed_type == "PublicUrl":
         if not report.public_url:
             raise HTTPException(status_code=500, detail="public_url_not_set")
         # Never send the PBI URL to the client — proxy endpoint handles delivery.
-        return {
+        return _obf({
             "embed_type": "PublicUrl",
             "embed_url": None,
             "html_embed": None,
@@ -136,7 +169,7 @@ async def get_embed(
             "display_config": report.display_config,
             "report_name": report.name,
             "export_config": report.export_config,
-        }
+        })
 
     # ── SP-based embed path ───────────────────────────────────────────────────
     rls_role: str | None = None
@@ -162,7 +195,7 @@ async def get_embed(
     except PowerBIError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
-    return {
+    return _obf({
         "embed_type": report.embed_type,
         "embed_url": embed["embed_url"],
         "html_embed": None,
@@ -171,7 +204,7 @@ async def get_embed(
         "display_config": report.display_config,
         "report_name": report.name,
         "export_config": report.export_config,
-    }
+    })
 
 
 @router.get("/{slug}/view", dependencies=[require_permission("report.view")])
