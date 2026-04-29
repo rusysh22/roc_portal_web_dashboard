@@ -141,13 +141,14 @@ async def get_embed(
 
     # ── HTML embed path ───────────────────────────────────────────────────────
     if report.embed_type == "HTML":
-        if not report.html_embed or not _extract_iframe_src(report.html_embed):
+        pbi_url = _extract_iframe_src(report.html_embed or "")
+        if not pbi_url:
             raise HTTPException(status_code=500, detail="html_embed_not_set")
-        # Never send the raw HTML / PBI URL to the client — proxy endpoint handles delivery.
+        # URL is sent obfuscated (base64 + noise) — never plain text in the response.
         return _obf({
             "embed_type": "HTML",
             "html_embed": None,
-            "embed_url": None,
+            "embed_url": pbi_url,
             "access_token": None,
             "token_expires_utc": None,
             "display_config": report.display_config,
@@ -159,10 +160,10 @@ async def get_embed(
     if report.embed_type == "PublicUrl":
         if not report.public_url:
             raise HTTPException(status_code=500, detail="public_url_not_set")
-        # Never send the PBI URL to the client — proxy endpoint handles delivery.
+        # URL is sent obfuscated (base64 + noise) — never plain text in the response.
         return _obf({
             "embed_type": "PublicUrl",
-            "embed_url": None,
+            "embed_url": report.public_url,
             "html_embed": None,
             "access_token": None,
             "token_expires_utc": None,

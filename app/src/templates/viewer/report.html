@@ -155,13 +155,11 @@ function reportViewer(slug) {
       const dc = this.config.display_config || {};
 
       if (this.config.embed_type === 'HTML' || this.config.embed_type === 'PublicUrl') {
-        // Serve via backend proxy so the real app.powerbi.com URL never appears
-        // in the client's Elements panel or Network XHR response.
+        // URL decoded from obfuscated XHR response — not visible as plain text in Network tab.
         const crop = dc.pbi_bar_height ?? 40;
-        const proxyUrl = `/api/reports/${encodeURIComponent(this.slug)}/view`;
         container.innerHTML = `<div style="width:100%;height:100%;overflow:hidden;">
           <iframe
-            src="${proxyUrl}"
+            src="${this.config.embed_url}"
             style="width:100%;height:calc(100% + ${crop}px);min-height:${500 + crop}px;border:none;display:block;"
             allow="fullscreen"
             title="${this.config.report_name || this.slug}">
@@ -221,8 +219,7 @@ function reportViewer(slug) {
       if (!container) return;
       // HTML/PublicUrl: fullscreen pada wrapper div agar CSS crop (overflow:hidden) tetap bekerja.
       // SP embed: fullscreen pada container langsung.
-      const isProxied = ['HTML', 'PublicUrl'].includes(this.config?.embed_type);
-      const target = isProxied
+      const target = ['HTML', 'PublicUrl'].includes(this.config?.embed_type)
         ? (container.querySelector('div') || container)
         : container;
       if (!document.fullscreenElement) {
