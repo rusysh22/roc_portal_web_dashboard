@@ -145,30 +145,14 @@ function reportViewer(slug) {
 
       const dc = this.config.display_config || {};
 
-      if (this.config.embed_type === 'HTML') {
-        // Raw HTML embed (copy-paste dari Power BI embed dialog)
+      if (this.config.embed_type === 'HTML' || this.config.embed_type === 'PublicUrl') {
+        // Serve via backend proxy so the real app.powerbi.com URL never appears
+        // in the client's Elements panel or Network XHR response.
         const crop = dc.pbi_bar_height ?? 40;
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'width:100%;height:100%;overflow:hidden;';
-        wrapper.innerHTML = this.config.html_embed || '';
-        const iframe = wrapper.querySelector('iframe');
-        if (iframe) {
-          iframe.style.cssText = `width:100%;height:calc(100% + ${crop}px);min-height:${500 + crop}px;border:none;display:block;`;
-          iframe.removeAttribute('width');
-          iframe.removeAttribute('height');
-        }
-        container.innerHTML = '';
-        container.appendChild(wrapper);
-        return;
-      }
-
-      if (this.config.embed_type === 'PublicUrl') {
-        // "Publish to web" URL — powerbi SDK tidak support, pakai iframe biasa.
-        // Wrapper overflow:hidden memotong bar branding Power BI di bagian bawah iframe.
-        const crop = dc.pbi_bar_height ?? 40;
+        const proxyUrl = `/api/reports/${encodeURIComponent(this.slug)}/view`;
         container.innerHTML = `<div style="width:100%;height:100%;overflow:hidden;">
           <iframe
-            src="${this.config.embed_url}"
+            src="${proxyUrl}"
             style="width:100%;height:calc(100% + ${crop}px);min-height:${500 + crop}px;border:none;display:block;"
             allow="fullscreen"
             title="${this.config.report_name || this.slug}">
@@ -226,9 +210,10 @@ function reportViewer(slug) {
     toggleFullscreen() {
       const container = document.getElementById('embed-container');
       if (!container) return;
-      // PublicUrl: fullscreen pada wrapper div agar CSS crop (overflow:hidden) tetap bekerja.
+      // HTML/PublicUrl: fullscreen pada wrapper div agar CSS crop (overflow:hidden) tetap bekerja.
       // SP embed: fullscreen pada container langsung.
-      const target = this.config?.embed_type === 'PublicUrl'
+      const isProxied = ['HTML', 'PublicUrl'].includes(this.config?.embed_type);
+      const target = isProxied
         ? (container.querySelector('div') || container)
         : container;
       if (!document.fullscreenElement) {
