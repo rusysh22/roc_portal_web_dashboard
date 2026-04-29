@@ -1,0 +1,190 @@
+{% extends "layout.html" %}
+{% block title %}{{ t("admin.departments.title") }} — {{ app_name }}{% endblock %}
+{% block page_title %}{{ t("admin.departments.title") }}{% endblock %}
+
+{% block content %}
+<div x-data="deptManager()" x-init="init()">
+
+  <div class="flex items-center justify-between mb-6">
+    <p class="text-sm text-slate-500 dark:text-slate-400">{{ t("admin.departments.subtitle") }}</p>
+    <button @click="openCreate()" class="btn-primary gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      {{ t("admin.departments.add") }}
+    </button>
+  </div>
+
+  {# Table #}
+  <div class="card p-0 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 dark:bg-slate-700/50 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+        <tr>
+          <th class="px-5 py-3 text-left">{{ t("admin.departments.col_name") }}</th>
+          <th class="px-5 py-3 text-left hidden md:table-cell">{{ t("admin.departments.col_description") }}</th>
+          <th class="px-5 py-3 text-center">{{ t("admin.departments.col_users") }}</th>
+          <th class="px-5 py-3 text-right"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+        <template x-if="loading">
+          <tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">{{ t("common.loading") }}</td></tr>
+        </template>
+        <template x-if="!loading && departments.length === 0">
+          <tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">{{ t("admin.departments.empty") }}</td></tr>
+        </template>
+        <template x-for="d in departments" :key="d.id">
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+            <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-200" x-text="d.name"></td>
+            <td class="px-5 py-3 text-slate-500 dark:text-slate-400 hidden md:table-cell" x-text="d.description || '—'"></td>
+            <td class="px-5 py-3 text-center">
+              <span class="inline-flex items-center justify-center w-8 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300" x-text="d.user_count"></span>
+            </td>
+            <td class="px-5 py-3 text-right">
+              <div class="flex justify-end gap-2">
+                <button @click="openEdit(d)" class="p-1 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                </button>
+                <button @click="confirmDelete(d)" class="p-1 text-slate-400 hover:text-red-500">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+
+  {# Create / Edit Modal #}
+  <div x-show="showModal" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+    <div @click.outside="showModal = false"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md">
+      <div class="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700">
+        <h2 class="font-semibold text-slate-900 dark:text-white"
+            x-text="editing ? '{{ t('admin.departments.edit_title') }}' : '{{ t('admin.departments.create_title') }}'"></h2>
+        <button @click="showModal = false" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <form @submit.prevent="save" class="p-5 space-y-4">
+        <div x-show="formError" class="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm" x-text="formError"></div>
+        <div>
+          <label class="form-label">{{ t("admin.departments.field_name") }} *</label>
+          <input type="text" x-model="form.name" required class="form-input w-full" placeholder="IT, Finance, HR...">
+        </div>
+        <div>
+          <label class="form-label">{{ t("admin.departments.field_description") }}</label>
+          <input type="text" x-model="form.description" class="form-input w-full" placeholder="{{ t('admin.departments.field_description') }}">
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" @click="showModal = false" class="btn-outline">{{ t("common.cancel") }}</button>
+          <button type="submit" :disabled="saving" class="btn-primary">
+            <span x-show="!saving">{{ t("common.save") }}</span>
+            <span x-show="saving">...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# Delete Confirm Modal #}
+  <div x-show="showDeleteModal" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+    <div @click.outside="showDeleteModal = false"
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm p-6">
+      <h3 class="font-semibold text-slate-900 dark:text-white mb-2">{{ t("admin.departments.delete_title") }}</h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-5">
+        {{ t("admin.departments.delete_confirm") }} <strong x-text="deleting?.name"></strong>?
+      </p>
+      <div class="flex justify-end gap-3">
+        <button @click="showDeleteModal = false" class="btn-outline">{{ t("common.cancel") }}</button>
+        <button @click="deleteDept()" :disabled="saving"
+                class="btn-primary bg-red-600 hover:bg-red-700 border-red-600">{{ t("common.delete") }}</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+function deptManager() {
+  return {
+    departments: [],
+    loading: true,
+    showModal: false,
+    showDeleteModal: false,
+    editing: null,
+    deleting: null,
+    saving: false,
+    formError: '',
+    form: { name: '', description: '' },
+
+    async init() {
+      await this.reload();
+    },
+
+    async reload() {
+      this.loading = true;
+      const res = await fetch('/api/admin/departments', { credentials: 'same-origin' });
+      this.departments = res.ok ? await res.json() : [];
+      this.loading = false;
+    },
+
+    openCreate() {
+      this.editing = null;
+      this.form = { name: '', description: '' };
+      this.formError = '';
+      this.showModal = true;
+    },
+
+    openEdit(d) {
+      this.editing = d;
+      this.form = { name: d.name, description: d.description || '' };
+      this.formError = '';
+      this.showModal = true;
+    },
+
+    async save() {
+      this.saving = true; this.formError = '';
+      try {
+        const url = this.editing ? `/api/admin/departments/${this.editing.id}` : '/api/admin/departments';
+        const method = this.editing ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+          method, credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.form),
+        });
+        if (res.ok) {
+          this.showModal = false;
+          await this.reload();
+        } else {
+          const d = await res.json();
+          this.formError = Array.isArray(d.detail) ? d.detail.map(e => e.msg).join(' | ') : d.detail || 'Error';
+        }
+      } finally { this.saving = false; }
+    },
+
+    confirmDelete(d) { this.deleting = d; this.showDeleteModal = true; },
+
+    async deleteDept() {
+      if (!this.deleting) return;
+      this.saving = true;
+      await fetch(`/api/admin/departments/${this.deleting.id}`, { method: 'DELETE', credentials: 'same-origin' });
+      this.saving = false; this.showDeleteModal = false;
+      await this.reload();
+    },
+  };
+}
+</script>
+{% endblock %}

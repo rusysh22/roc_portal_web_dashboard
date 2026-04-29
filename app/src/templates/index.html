@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ t("app.name") }} — {{ t("app.tagline") }}{% endblock %}
+
+{% block body %}
+<main class="min-h-full flex flex-col items-center justify-center px-6 py-12">
+  <div class="card max-w-xl w-full text-center">
+    <div class="mb-6 flex items-center justify-center">
+      <div class="w-16 h-16 rounded-2xl bg-primary-600 flex items-center justify-center text-white text-2xl font-bold">
+        R
+      </div>
+    </div>
+    <h1 class="text-3xl font-bold mb-2">{{ t("app.name") }}</h1>
+    <p class="text-slate-500 dark:text-slate-400 mb-8">{{ t("app.tagline") }}</p>
+
+    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+      <a href="/login" class="btn-primary">{{ t("common.login") }}</a>
+      <button type="button"
+              onclick="document.cookie='lang='+(this.dataset.next)+';path=/;max-age=31536000';location.reload()"
+              data-next="{{ 'en' if locale == 'id' else 'id' }}"
+              class="btn-secondary">
+        {{ t("common.language") }}: {{ 'EN' if locale == 'id' else 'ID' }}
+      </button>
+    </div>
+
+    <p class="text-xs text-slate-400 mt-8">
+      Phase 0 scaffold &middot; v0.1.0 &middot; locale: <code>{{ locale }}</code>
+    </p>
+  </div>
+</main>
+{% endblock %}

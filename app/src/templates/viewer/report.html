@@ -1,0 +1,279 @@
+{% extends "layout.html" %}
+{% block title %}{{ report_slug }} — {{ app_name }}{% endblock %}
+{% block page_title %}<span id="report-title">{{ t("report.viewer.loading") }}</span>{% endblock %}
+
+{% block head_extra %}{% endblock %}
+
+{# Override main to remove overflow-y-auto & padding — report viewer fills the full remaining height #}
+{% block main_class %}flex-1 overflow-hidden flex flex-col{% endblock %}
+{% block main_content %}
+{% block content %}
+<div x-data="reportViewer('{{ report_slug }}')" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+
+  {# ── Loading overlay ──────────────────────────────────────────────────── #}
+  <div x-show="state === 'loading'"
+       class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+    <svg class="w-8 h-8 animate-spin text-primary-500 mb-3" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+    </svg>
+    <p class="text-sm text-slate-500 dark:text-slate-400">{{ t("report.viewer.loading") }}</p>
+  </div>
+
+  {# ── Error state ──────────────────────────────────────────────────────── #}
+  <div x-show="state === 'error'"
+       class="flex flex-col items-center justify-center flex-1 p-8 text-center">
+    <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+      <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+    </div>
+    <h3 class="font-semibold text-slate-900 dark:text-white mb-2" x-text="errorTitle"></h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-5" x-text="errorMsg"></p>
+    <button @click="load()" class="btn-primary">{{ t("report.viewer.retry") }}</button>
+  </div>
+
+  {# ── Embed toolbar ────────────────────────────────────────────────────── #}
+  <div x-show="state === 'ready'"
+       class="flex items-center justify-between px-4 lg:px-6 py-2
+              bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700
+              flex-shrink-0">
+    <p class="text-sm text-slate-500 dark:text-slate-400">
+      <span x-text="config ? config.report_name : ''"></span>
+    </p>
+    <div class="flex items-center gap-2">
+      {# Export buttons — shown only if configured #}
+      <template x-if="config && config.export_config && config.export_config.pdf_allowed">
+        <button @click="exportReport('pdf')" data-export="pdf"
+                class="btn-outline py-1 px-3 text-xs gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          {{ t("report.viewer.export_pdf") }}
+        </button>
+      </template>
+      <template x-if="config && config.export_config && config.export_config.pptx_allowed">
+        <button @click="exportReport('pptx')" data-export="pptx"
+                class="btn-outline py-1 px-3 text-xs gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          {{ t("report.viewer.export_pptx") }}
+        </button>
+      </template>
+      {# Fullscreen toggle #}
+      <button @click="toggleFullscreen()"
+              class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+              title="{{ t('report.viewer.fullscreen') }}">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  {# ── Embed container ──────────────────────────────────────────────────── #}
+  <div x-show="state === 'ready'" class="flex-1 relative min-h-0">
+    <div id="embed-container"
+         class="absolute inset-0 w-full h-full"
+         style="min-height: 500px;">
+    </div>
+  </div>
+
+</div>
+{% endblock %}{# content #}
+{% endblock %}{# main_content #}
+
+{% block page_scripts %}
+<script>
+function reportViewer(slug) {
+  return {
+    slug,
+    state: 'loading',  // loading | ready | error
+    config: null,
+    errorTitle: '',
+    errorMsg: '',
+    pbiEmbed: null,
+
+    async init() {
+      await this.load();
+    },
+
+    async load() {
+      this.state = 'loading';
+      this.errorTitle = '';
+      this.errorMsg = '';
+
+      try {
+        const res = await fetch(`/api/reports/${this.slug}/embed`, { credentials: 'same-origin' });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          if (res.status === 403) {
+            this.errorTitle = '{{ t("error.403") }}';
+            this.errorMsg = '{{ t("report.viewer.no_access") }}';
+          } else if (res.status === 404) {
+            this.errorTitle = '{{ t("error.404") }}';
+            this.errorMsg = '{{ t("report.viewer.not_found") }}';
+          } else {
+            this.errorTitle = '{{ t("error.500") }}';
+            this.errorMsg = d.detail || '{{ t("report.viewer.embed_failed") }}';
+          }
+          this.state = 'error';
+          return;
+        }
+
+        this.config = await res.json();
+        document.getElementById('report-title').textContent = this.config.report_name || slug;
+        this.state = 'ready';
+
+        // wait for DOM
+        await this.$nextTick();
+        this._embed();
+
+      } catch (err) {
+        this.errorTitle = '{{ t("error.500") }}';
+        this.errorMsg = err.message;
+        this.state = 'error';
+      }
+    },
+
+    async _embed() {
+      const container = document.getElementById('embed-container');
+      if (!container || !this.config) return;
+
+      const dc = this.config.display_config || {};
+
+      if (this.config.embed_type === 'HTML') {
+        // Raw HTML embed (copy-paste dari Power BI embed dialog)
+        const crop = dc.pbi_bar_height ?? 40;
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'width:100%;height:100%;overflow:hidden;';
+        wrapper.innerHTML = this.config.html_embed || '';
+        const iframe = wrapper.querySelector('iframe');
+        if (iframe) {
+          iframe.style.cssText = `width:100%;height:calc(100% + ${crop}px);min-height:${500 + crop}px;border:none;display:block;`;
+          iframe.removeAttribute('width');
+          iframe.removeAttribute('height');
+        }
+        container.innerHTML = '';
+        container.appendChild(wrapper);
+        return;
+      }
+
+      if (this.config.embed_type === 'PublicUrl') {
+        // "Publish to web" URL — powerbi SDK tidak support, pakai iframe biasa.
+        // Wrapper overflow:hidden memotong bar branding Power BI di bagian bawah iframe.
+        const crop = dc.pbi_bar_height ?? 40;
+        container.innerHTML = `<div style="width:100%;height:100%;overflow:hidden;">
+          <iframe
+            src="${this.config.embed_url}"
+            style="width:100%;height:calc(100% + ${crop}px);min-height:${500 + crop}px;border:none;display:block;"
+            allow="fullscreen"
+            title="${this.config.report_name || this.slug}">
+          </iframe>
+        </div>`;
+        return;
+      }
+
+      // SP-based embed — load SDK on demand
+      if (!window.powerbi) {
+        try {
+          await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.powerbi.com/libs/powerbi-client/2.23.1/powerbi.min.js';
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Gagal memuat powerbi-client SDK dari CDN'));
+            document.head.appendChild(s);
+          });
+        } catch (sdkErr) {
+          this.errorTitle = 'SDK Error';
+          this.errorMsg = sdkErr.message;
+          this.state = 'error';
+          return;
+        }
+      }
+
+      const models = window.powerbi.models;
+      const config = {
+        type: this.config.embed_type.toLowerCase(),
+        id: undefined,
+        embedUrl: this.config.embed_url,
+        accessToken: this.config.access_token,
+        tokenType: models.TokenType.Embed,
+        settings: {
+          filterPaneEnabled: dc.filterPaneEnabled ?? false,
+          navContentPaneEnabled: dc.navContentPaneEnabled ?? false,
+          background: models.BackgroundType.Transparent,
+          layoutType: models.LayoutType.Custom,
+          customLayout: {
+            displayOption: models.DisplayOption.FitToPage,
+          },
+        },
+      };
+
+      if (dc.defaultPage) {
+        config.pageName = dc.defaultPage;
+      }
+
+      this.pbiEmbed = window.powerbi.embed(container, config);
+      this.pbiEmbed.on('error', (event) => {
+        console.error('PBI embed error:', event.detail);
+      });
+    },
+
+    toggleFullscreen() {
+      const container = document.getElementById('embed-container');
+      if (!container) return;
+      // PublicUrl: fullscreen pada wrapper div agar CSS crop (overflow:hidden) tetap bekerja.
+      // SP embed: fullscreen pada container langsung.
+      const target = this.config?.embed_type === 'PublicUrl'
+        ? (container.querySelector('div') || container)
+        : container;
+      if (!document.fullscreenElement) {
+        (target.requestFullscreen?.() ?? target.webkitRequestFullscreen?.())?.catch(() => {});
+      } else {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    },
+
+    async exportReport(format) {
+      const btn = document.querySelector(`[data-export="${format}"]`);
+      if (btn) { btn.disabled = true; btn.textContent = '{{ t("report.viewer.export_start") }}'; }
+      try {
+        const res = await fetch(`/api/exports/reports/${this.slug}`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ format }),
+        });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || 'export_failed');
+        const { job_id } = await res.json();
+        if (btn) btn.textContent = '{{ t("report.viewer.export_processing") }}';
+        await this._pollExport(job_id, btn, format);
+      } catch (err) {
+        if (btn) { btn.disabled = false; btn.textContent = format.toUpperCase(); }
+        alert('{{ t("report.viewer.export_error") }}: ' + err.message);
+      }
+    },
+
+    async _pollExport(jobId, btn, format) {
+      for (let i = 0; i < 60; i++) {
+        await new Promise(r => setTimeout(r, 5000));
+        const res = await fetch(`/api/exports/${jobId}/status`, { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('status_check_failed');
+        const data = await res.json();
+        if (data.status === 'done') {
+          if (btn) { btn.disabled = false; btn.textContent = format.toUpperCase(); }
+          window.location.href = `/api/exports/${jobId}/download`;
+          return;
+        }
+        if (data.status === 'error') throw new Error(data.error || 'export_error');
+      }
+      throw new Error('export_timeout');
+    },
+  };
+}
+</script>
+{% endblock %}

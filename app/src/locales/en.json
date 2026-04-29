@@ -1,0 +1,182 @@
+{
+  "app": {
+    "name": "ROC Portal",
+    "tagline": "Secure & Controlled Power BI Portal"
+  },
+  "common": {
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "loading": "Loading...",
+    "back": "Back",
+    "yes": "Yes",
+    "no": "No",
+    "language": "Language",
+    "prev": "Previous",
+    "next": "Next",
+    "dark_mode": "Dark Mode",
+    "light_mode": "Light Mode"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in to Portal",
+      "subtitle": "Please enter your credentials",
+      "email": "Email or User ID",
+      "password": "Password",
+      "remember_me": "Remember me",
+      "forgot_password": "Forgot password?",
+      "submit": "Sign In",
+      "error_invalid": "Invalid email or password",
+      "error_locked": "Account locked. Try again in {minutes} minutes"
+    }
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "reports": "Reports",
+    "admin": "Administration",
+    "users": "Users",
+    "roles": "Roles",
+    "departments": "Departments",
+    "menu": "Menu",
+    "config": "Configuration",
+    "audit": "Audit Log",
+    "profile": "Profile"
+  },
+  "dashboard": {
+    "welcome": "Welcome, {name}",
+    "no_reports": "No reports available for your account"
+  },
+  "report": {
+    "viewer": {
+      "loading": "Loading report...",
+      "export_pdf": "Export PDF",
+      "export_pptx": "Export PPTX",
+      "no_access": "You do not have access to this report",
+      "not_found": "Report not found",
+      "embed_failed": "Failed to load report embed",
+      "retry": "Retry",
+      "fullscreen": "Fullscreen",
+      "export_start": "Starting export...",
+      "export_processing": "Processing...",
+      "export_error": "Export failed"
+    }
+  },
+  "admin": {
+    "users": {
+      "add": "Add User",
+      "create_title": "Add New User",
+      "edit_title": "Edit User",
+      "delete_title": "Delete User",
+      "delete_confirm": "Are you sure you want to delete",
+      "col_name": "Name",
+      "col_email": "Email",
+      "col_roles": "Roles",
+      "col_status": "Status",
+      "col_last_login": "Last Login",
+      "active": "Active",
+      "inactive": "Inactive",
+      "empty": "No users found",
+      "total": "users",
+      "field_name": "Full Name",
+      "field_email": "Email",
+      "field_username": "Username",
+      "field_password": "Password",
+      "field_roles": "Roles",
+      "field_active": "Active",
+      "field_must_reset": "Force password reset",
+      "password_hint": "Min 12 characters: uppercase, lowercase, and number"
+    },
+    "reports": {
+      "title": "Report Management",
+      "add": "Add Report",
+      "create_title": "Add New Report",
+      "edit_title": "Edit Report",
+      "delete_title": "Delete Report",
+      "delete_confirm": "Are you sure you want to delete report",
+      "subtitle": "Manage Power BI report configurations",
+      "empty": "No reports found",
+      "preview": "Preview",
+      "all_roles": "All roles",
+      "col_name": "Name",
+      "col_type": "Type",
+      "col_roles": "Role Access",
+      "col_status": "Status",
+      "col_order": "Order",
+      "field_name": "Report Name",
+      "field_slug": "Slug",
+      "slug_hint": "Lowercase letters, numbers, and hyphens only",
+      "field_description": "Description",
+      "field_embed_type": "Embed Type",
+      "field_public_url": "Public Embed URL",
+      "public_url_hint": "URL from Power BI 'Publish to web' feature",
+      "field_rls": "Enable Row-Level Security (RLS)",
+      "field_roles": "Restrict Access to These Roles",
+      "roles_hint": "Leave empty = all roles can access",
+      "field_order": "Order"
+    },
+    "config": {
+      "title": "Portal Configuration",
+      "subtitle": "Per-tenant settings for portal appearance and features",
+      "saved": "Saved",
+      "save_error": "Save failed",
+      "group_site": "Branding & Display",
+      "group_auth": "Authentication & Security",
+      "group_pbi": "Power BI",
+      "group_feature": "Features",
+      "group_i18n": "Language"
+    },
+    "departments": {
+      "title": "Department Management",
+      "add": "Add Department",
+      "create_title": "Add New Department",
+      "edit_title": "Edit Department",
+      "delete_title": "Delete Department",
+      "delete_confirm": "Are you sure you want to delete department",
+      "subtitle": "Manage departments and their report access",
+      "empty": "No departments found",
+      "col_name": "Name",
+      "col_description": "Description",
+      "col_users": "Members",
+      "field_name": "Department Name",
+      "field_description": "Description"
+    },
+    "roles": {
+      "add": "Add Role",
+      "create_title": "Add New Role",
+      "edit_title": "Edit Role",
+      "delete_title": "Delete Role",
+      "delete_confirm": "Are you sure you want to delete role",
+      "subtitle": "Manage roles and access permissions",
+      "empty": "No roles found",
+      "no_permissions": "No permissions assigned",
+      "field_name": "Role Name",
+      "field_name_placeholder": "e.g. viewer",
+      "field_description": "Description",
+      "field_description_placeholder": "Brief description of this role",
+      "field_permissions": "Permissions"
+    }
+  },
+  "me": {
+    "profile": {
+      "tenant": "Tenant",
+      "change_password": "Change Password",
+      "current_password": "Current Password",
+      "new_password": "New Password",
+      "confirm_password": "Confirm New Password",
+      "save_password": "Save Password",
+      "password_changed": "Password changed successfully",
+      "password_mismatch": "New password confirmation does not match",
+      "wrong_current": "Current password is incorrect"
+    }
+  },
+  "error": {
+    "404": "Page not found",
+    "403": "Access denied",
+    "500": "Internal server error"
+  }
+}

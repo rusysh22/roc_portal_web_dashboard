@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="{{ locale or 'id' }}" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+  {# ── Dynamic brand theming from site config ──────────────────────── #}
+  {% if site_config and site_config.get('_palette') %}
+  {% set p = site_config._palette %}
+  <style>
+    :root {
+      --color-primary:     {{ p.primary }};
+      --color-primary-50:  {{ p.primary_50 }};
+      --color-primary-100: {{ p.primary_100 }};
+      --color-primary-500: {{ p.primary_500 }};
+      --color-primary-600: {{ p.primary_600 }};
+      --color-primary-700: {{ p.primary_700 }};
+      --color-primary-900: {{ p.primary_900 }};
+      --color-secondary:   {{ site_config._secondary_rgb }};
+      --brand-primary:     {{ site_config._brand_primary }};
+      --brand-secondary:   {{ site_config._brand_secondary }};
+    }
+  </style>
+  {% endif %}
+  {# ── Favicon ──────────────────────────────────────────────────────── #}
+  {% if site_config and site_config.get('site.favicon_url') %}
+  <link rel="icon" href="{{ site_config['site.favicon_url'] }}">
+  {% endif %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    // Dark mode: apply before Alpine to avoid flash
+    (function () {
+      var pref = localStorage.getItem('theme');
+      if (pref === 'dark' || (!pref && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  <script defer src="{{ url_for('static', path='js/alpine.min.js') }}"></script>
+  <script defer src="{{ url_for('static', path='js/htmx.min.js') }}"></script>
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="h-full antialiased">
+  {% block body %}{% endblock %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,182 @@
+{
+  "app": {
+    "name": "ROC Portal",
+    "tagline": "Portal Power BI Aman & Terkontrol"
+  },
+  "common": {
+    "login": "Masuk",
+    "logout": "Keluar",
+    "submit": "Kirim",
+    "cancel": "Batal",
+    "save": "Simpan",
+    "delete": "Hapus",
+    "edit": "Ubah",
+    "search": "Cari",
+    "loading": "Memuat...",
+    "back": "Kembali",
+    "yes": "Ya",
+    "no": "Tidak",
+    "language": "Bahasa",
+    "prev": "Sebelumnya",
+    "next": "Berikutnya",
+    "dark_mode": "Mode Gelap",
+    "light_mode": "Mode Terang"
+  },
+  "auth": {
+    "login": {
+      "title": "Masuk ke Portal",
+      "subtitle": "Silakan masukkan kredensial Anda",
+      "email": "Email atau ID Pengguna",
+      "password": "Kata Sandi",
+      "remember_me": "Ingat saya",
+      "forgot_password": "Lupa kata sandi?",
+      "submit": "Masuk",
+      "error_invalid": "Email atau kata sandi salah",
+      "error_locked": "Akun terkunci. Coba lagi dalam {minutes} menit"
+    }
+  },
+  "nav": {
+    "dashboard": "Dasbor",
+    "reports": "Laporan",
+    "admin": "Administrasi",
+    "users": "Pengguna",
+    "roles": "Peran",
+    "departments": "Departemen",
+    "menu": "Menu",
+    "config": "Konfigurasi",
+    "audit": "Log Audit",
+    "profile": "Profil"
+  },
+  "dashboard": {
+    "welcome": "Selamat datang, {name}",
+    "no_reports": "Tidak ada laporan yang dapat diakses"
+  },
+  "report": {
+    "viewer": {
+      "loading": "Memuat laporan...",
+      "export_pdf": "Ekspor PDF",
+      "export_pptx": "Ekspor PPTX",
+      "no_access": "Anda tidak memiliki akses ke laporan ini",
+      "not_found": "Laporan tidak ditemukan",
+      "embed_failed": "Gagal memuat embed laporan",
+      "retry": "Coba Lagi",
+      "fullscreen": "Layar penuh",
+      "export_start": "Memulai ekspor...",
+      "export_processing": "Sedang diproses...",
+      "export_error": "Ekspor gagal"
+    }
+  },
+  "admin": {
+    "users": {
+      "add": "Tambah Pengguna",
+      "create_title": "Tambah Pengguna Baru",
+      "edit_title": "Ubah Pengguna",
+      "delete_title": "Hapus Pengguna",
+      "delete_confirm": "Yakin ingin menghapus pengguna",
+      "col_name": "Nama",
+      "col_email": "Email",
+      "col_roles": "Peran",
+      "col_status": "Status",
+      "col_last_login": "Login Terakhir",
+      "active": "Aktif",
+      "inactive": "Nonaktif",
+      "empty": "Belum ada pengguna",
+      "total": "pengguna",
+      "field_name": "Nama Lengkap",
+      "field_email": "Email",
+      "field_username": "Username",
+      "field_password": "Kata Sandi",
+      "field_roles": "Peran",
+      "field_active": "Aktif",
+      "field_must_reset": "Wajib ganti password",
+      "password_hint": "Min 12 karakter, huruf besar, kecil, dan angka"
+    },
+    "reports": {
+      "title": "Manajemen Laporan",
+      "add": "Tambah Laporan",
+      "create_title": "Tambah Laporan Baru",
+      "edit_title": "Ubah Laporan",
+      "delete_title": "Hapus Laporan",
+      "delete_confirm": "Yakin ingin menghapus laporan",
+      "subtitle": "Kelola konfigurasi laporan Power BI",
+      "empty": "Belum ada laporan",
+      "preview": "Pratinjau",
+      "all_roles": "Semua peran",
+      "col_name": "Nama",
+      "col_type": "Tipe",
+      "col_roles": "Akses Peran",
+      "col_status": "Status",
+      "col_order": "Urutan",
+      "field_name": "Nama Laporan",
+      "field_slug": "Slug",
+      "slug_hint": "Huruf kecil, angka, dan tanda hubung saja",
+      "field_description": "Deskripsi",
+      "field_embed_type": "Tipe Embed",
+      "field_public_url": "Public Embed URL",
+      "public_url_hint": "URL dari fitur 'Publish to web' Power BI",
+      "field_rls": "Aktifkan Row-Level Security (RLS)",
+      "field_roles": "Batasi Akses ke Peran Ini",
+      "roles_hint": "Kosongkan = semua peran bisa akses",
+      "field_order": "Urutan"
+    },
+    "config": {
+      "title": "Konfigurasi Portal",
+      "subtitle": "Pengaturan per-tenant untuk tampilan dan fitur portal",
+      "saved": "Tersimpan",
+      "save_error": "Gagal menyimpan",
+      "group_site": "Tampilan & Branding",
+      "group_auth": "Autentikasi & Keamanan",
+      "group_pbi": "Power BI",
+      "group_feature": "Fitur",
+      "group_i18n": "Bahasa"
+    },
+    "departments": {
+      "title": "Manajemen Departemen",
+      "add": "Tambah Departemen",
+      "create_title": "Tambah Departemen Baru",
+      "edit_title": "Ubah Departemen",
+      "delete_title": "Hapus Departemen",
+      "delete_confirm": "Yakin ingin menghapus departemen",
+      "subtitle": "Kelola departemen dan akses laporan mereka",
+      "empty": "Belum ada departemen",
+      "col_name": "Nama",
+      "col_description": "Deskripsi",
+      "col_users": "Anggota",
+      "field_name": "Nama Departemen",
+      "field_description": "Deskripsi"
+    },
+    "roles": {
+      "add": "Tambah Peran",
+      "create_title": "Tambah Peran Baru",
+      "edit_title": "Ubah Peran",
+      "delete_title": "Hapus Peran",
+      "delete_confirm": "Yakin ingin menghapus peran",
+      "subtitle": "Kelola peran dan hak akses pengguna",
+      "empty": "Belum ada peran",
+      "no_permissions": "Tidak ada izin",
+      "field_name": "Nama Peran",
+      "field_name_placeholder": "contoh: viewer",
+      "field_description": "Deskripsi",
+      "field_description_placeholder": "Deskripsi singkat peran ini",
+      "field_permissions": "Izin (Permissions)"
+    }
+  },
+  "me": {
+    "profile": {
+      "tenant": "Tenant",
+      "change_password": "Ganti Kata Sandi",
+      "current_password": "Kata Sandi Saat Ini",
+      "new_password": "Kata Sandi Baru",
+      "confirm_password": "Konfirmasi Kata Sandi Baru",
+      "save_password": "Simpan Kata Sandi",
+      "password_changed": "Kata sandi berhasil diubah",
+      "password_mismatch": "Konfirmasi kata sandi tidak cocok",
+      "wrong_current": "Kata sandi saat ini salah"
+    }
+  },
+  "error": {
+    "404": "Halaman tidak ditemukan",
+    "403": "Akses ditolak",
+    "500": "Terjadi kesalahan pada server"
+  }
+}

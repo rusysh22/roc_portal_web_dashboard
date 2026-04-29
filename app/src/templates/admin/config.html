@@ -1,0 +1,133 @@
+{% extends "layout.html" %}
+{% block title %}{{ t("admin.config.title") }} — {{ app_name }}{% endblock %}
+{% block page_title %}{{ t("admin.config.title") }}{% endblock %}
+
+{% block content %}
+<div x-data="configManager()" x-init="init()">
+
+  {# Subtitle #}
+  <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">{{ t("admin.config.subtitle") }}</p>
+
+  {# Tab nav #}
+  <div class="flex gap-1 mb-6 border-b border-slate-200 dark:border-slate-700">
+    {% for group_key in config_groups.keys() %}
+    <button
+      @click="activeTab = '{{ group_key }}'"
+      :class="activeTab === '{{ group_key }}'
+        ? 'border-b-2 border-primary-500 text-primary-600 dark:text-primary-400'
+        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'"
+      class="px-4 py-2 text-sm font-medium transition-colors -mb-px">
+      {{ t("admin.config.group_" + group_key) }}
+    </button>
+    {% endfor %}
+  </div>
+
+  {# Config groups #}
+  {% for group_key, items in config_groups.items() %}
+  <div x-show="activeTab === '{{ group_key }}'">
+    <div class="card divide-y divide-slate-100 dark:divide-slate-700/50 p-0 overflow-hidden">
+      {% for cfg in items %}
+      <div class="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3"
+           x-data="configRow('{{ cfg.key }}', '{{ cfg.value_type }}')"
+           x-init="init()">
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-sm text-slate-800 dark:text-slate-200">{{ cfg.key }}</div>
+          {% if cfg.description %}
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ cfg.description }}</div>
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-2 sm:min-w-[280px]">
+          {# Input by value_type #}
+          {% if cfg.value_type == 'bool' %}
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" class="sr-only peer" x-model="val"
+                   @change="save()">
+            <div class="w-10 h-5 bg-slate-200 peer-focus:ring-2 peer-focus:ring-primary-400
+                        rounded-full peer dark:bg-slate-600
+                        peer-checked:bg-primary-500 after:content-[''] after:absolute
+                        after:top-0.5 after:left-0.5 after:bg-white after:rounded-full
+                        after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5">
+            </div>
+          </label>
+          {% elif cfg.value_type == 'int' %}
+          <input type="number" x-model.number="val"
+                 class="form-input w-32 text-sm py-1.5"
+                 @change="save()">
+          {% else %}
+          <input type="text" x-model="val"
+                 class="form-input flex-1 text-sm py-1.5"
+                 @keydown.enter.prevent="save()">
+          <button @click="save()" :disabled="saving"
+                  class="btn-primary py-1.5 px-3 text-xs whitespace-nowrap">
+            <span x-show="!saving">{{ t("common.save") }}</span>
+            <span x-show="saving">...</span>
+          </button>
+          {% endif %}
+          {# Feedback badge #}
+          <span x-show="saved" x-transition class="text-xs text-green-600 dark:text-green-400 font-medium">
+            {{ t("admin.config.saved") }}
+          </span>
+          <span x-show="saveError" x-transition class="text-xs text-red-500 font-medium">
+            {{ t("admin.config.save_error") }}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script id="cfg-values" type="application/json">{{ config_values | tojson }}</script>
+<script>
+const _cfgValues = JSON.parse(document.getElementById('cfg-values').textContent);
+
+function configManager() {
+  return {
+    activeTab: '{{ config_groups.keys() | list | first }}',
+    init() {},
+  };
+}
+
+function configRow(key, valueType) {
+  return {
+    key,
+    val: _cfgValues[key] ?? null,
+    valueType,
+    saving: false,
+    saved: false,
+    saveError: false,
+
+    init() {},
+
+    async save() {
+      this.saving = true;
+      this.saved = false;
+      this.saveError = false;
+      try {
+        const res = await fetch(`/api/admin/config/${encodeURIComponent(this.key)}`, {
+          method: 'PUT',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+          },
+          body: JSON.stringify({ value: this.val }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        this.saved = true;
+        setTimeout(() => { this.saved = false; }, 2500);
+      } catch {
+        this.saveError = true;
+        setTimeout(() => { this.saveError = false; }, 3000);
+      } finally {
+        this.saving = false;
+      }
+    },
+  };
+}
+</script>
+{% endblock %}

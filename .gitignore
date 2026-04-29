@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Node (tailwind build only)
+node_modules/
+package-lock.json
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+nginx/certs/
+
+# Build output
+app/src/static/css/app.css
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Postgres / Redis volumes
+pgdata/
+redis-data/
+
+# Export temp
+app/tmp/exports/

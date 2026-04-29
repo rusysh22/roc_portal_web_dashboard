@@ -1,0 +1,222 @@
+{% extends "layout.html" %}
+{% block title %}{{ t("nav.roles") }} — {{ app_name }}{% endblock %}
+{% block page_title %}{{ t("nav.roles") }}{% endblock %}
+
+{% block breadcrumb %}
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ t("nav.admin") }}</p>
+{% endblock %}
+
+{% block content %}
+<div x-data="rolesPage()">
+
+  {# Toolbar #}
+  <div class="flex items-center justify-between mb-5">
+    <h2 class="text-sm text-slate-500 dark:text-slate-400">{{ t("admin.roles.subtitle") }}</h2>
+    <button @click="openCreate()" class="btn-primary gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      {{ t("admin.roles.add") }}
+    </button>
+  </div>
+
+  {# Role cards #}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <template x-if="loading">
+      <div class="card flex items-center justify-center py-8 text-slate-400 text-sm col-span-full">
+        {{ t("common.loading") }}
+      </div>
+    </template>
+    <template x-if="!loading && roles.length === 0">
+      <div class="card flex items-center justify-center py-8 text-slate-400 text-sm col-span-full">
+        {{ t("admin.roles.empty") }}
+      </div>
+    </template>
+    <template x-for="r in roles" :key="r.id">
+      <div class="card hover:shadow-md transition-shadow">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-semibold text-slate-900 dark:text-white" x-text="r.name"></h3>
+              <template x-if="r.is_system">
+                <span class="badge badge-blue">System</span>
+              </template>
+            </div>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2" x-text="r.description || '—'"></p>
+          </div>
+          <div class="flex items-center gap-1 ml-2 flex-shrink-0">
+            <button @click="openEdit(r)" :disabled="r.is_system"
+                    class="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </button>
+            <button @click="confirmDelete(r)" :disabled="r.is_system"
+                    class="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {# Permissions badges #}
+        <div class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+          <template x-if="r.permissions.length === 0">
+            <span class="text-xs text-slate-400">{{ t("admin.roles.no_permissions") }}</span>
+          </template>
+          <template x-for="p in r.permissions" :key="p.id">
+            <span class="badge badge-slate text-xs" x-text="p.code"></span>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  {# Create / Edit Modal #}
+  <div x-show="showModal"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+       @keydown.escape.window="showModal = false">
+    <div @click.stop
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700">
+        <h2 class="font-semibold text-slate-900 dark:text-white"
+            x-text="editingRole ? '{{ t('admin.roles.edit_title') }}' : '{{ t('admin.roles.create_title') }}'"></h2>
+        <button @click="showModal = false" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <form @submit.prevent="saveRole" class="p-5 space-y-4">
+        <div x-show="formError" class="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm" x-text="formError"></div>
+
+        <div>
+          <label class="form-label">{{ t("admin.roles.field_name") }} *</label>
+          <input type="text" x-model="form.name" required class="input" placeholder="{{ t('admin.roles.field_name_placeholder') }}">
+        </div>
+        <div>
+          <label class="form-label">{{ t("admin.roles.field_description") }}</label>
+          <input type="text" x-model="form.description" class="input" placeholder="{{ t('admin.roles.field_description_placeholder') }}">
+        </div>
+        <div>
+          <label class="form-label">{{ t("admin.roles.field_permissions") }}</label>
+          <div class="space-y-1.5 max-h-52 overflow-y-auto border border-slate-200 dark:border-slate-600 rounded-lg p-3">
+            <template x-for="p in availablePermissions" :key="p.id">
+              <label class="flex items-start gap-2 cursor-pointer py-0.5">
+                <input type="checkbox" :value="p.id" :checked="form.permission_ids.includes(p.id)"
+                       @change="togglePerm(p.id)"
+                       class="mt-0.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500">
+                <div>
+                  <div class="text-sm font-medium text-slate-700 dark:text-slate-300" x-text="p.code"></div>
+                  <div class="text-xs text-slate-500" x-text="p.description || ''"></div>
+                </div>
+              </label>
+            </template>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" @click="showModal = false" class="btn-outline">{{ t("common.cancel") }}</button>
+          <button type="submit" :disabled="saving" class="btn-primary gap-2">
+            <svg x-show="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            {{ t("common.save") }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# Delete confirmation #}
+  <div x-show="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+    <div @click.stop class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm p-6">
+      <h3 class="font-semibold text-slate-900 dark:text-white mb-2">{{ t("admin.roles.delete_title") }}</h3>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-5">
+        {{ t("admin.roles.delete_confirm") }} <strong x-text="deletingRole?.name"></strong>?
+      </p>
+      <div class="flex justify-end gap-3">
+        <button @click="showDeleteModal = false" class="btn-outline">{{ t("common.cancel") }}</button>
+        <button @click="deleteRole()" :disabled="saving" class="btn-danger">{{ t("common.delete") }}</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+function rolesPage() {
+  return {
+    roles: [],
+    loading: true,
+    showModal: false,
+    showDeleteModal: false,
+    editingRole: null,
+    deletingRole: null,
+    saving: false,
+    formError: '',
+    availablePermissions: {{ permissions_json | safe }},
+    form: { name: '', description: '', permission_ids: [] },
+
+    async init() { await this.reload(); },
+
+    async reload() {
+      this.loading = true;
+      const res = await fetch('/api/admin/roles', { credentials: 'same-origin' });
+      if (res.ok) { this.roles = await res.json(); }
+      this.loading = false;
+    },
+
+    openCreate() {
+      this.editingRole = null;
+      this.form = { name: '', description: '', permission_ids: [] };
+      this.formError = '';
+      this.showModal = true;
+    },
+
+    openEdit(r) {
+      this.editingRole = r;
+      this.form = { name: r.name, description: r.description || '', permission_ids: r.permissions.map(p => p.id) };
+      this.formError = '';
+      this.showModal = true;
+    },
+
+    togglePerm(id) {
+      const idx = this.form.permission_ids.indexOf(id);
+      if (idx === -1) this.form.permission_ids.push(id);
+      else this.form.permission_ids.splice(idx, 1);
+    },
+
+    async saveRole() {
+      this.saving = true; this.formError = '';
+      try {
+        const url = this.editingRole ? `/api/admin/roles/${this.editingRole.id}` : '/api/admin/roles';
+        const method = this.editingRole ? 'PUT' : 'POST';
+        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(this.form) });
+        if (res.ok) { this.showModal = false; await this.reload(); }
+        else { const d = await res.json(); this.formError = d.detail || '{{ t("error.500") }}'; }
+      } finally { this.saving = false; }
+    },
+
+    confirmDelete(r) { this.deletingRole = r; this.showDeleteModal = true; },
+
+    async deleteRole() {
+      if (!this.deletingRole) return;
+      this.saving = true;
+      await fetch(`/api/admin/roles/${this.deletingRole.id}`, { method: 'DELETE', credentials: 'same-origin' });
+      this.saving = false; this.showDeleteModal = false;
+      await this.reload();
+    },
+  };
+}
+</script>
+{% endblock %}
